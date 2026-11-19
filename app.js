@@ -1,10 +1,9 @@
 /* =========================================================
-   ContentFlow — Logika Aplikasi To-Do & Manajemen Konten
+   ContentFlow Multi-Brand — Offline Storage, Brands & Reports
    ========================================================= */
 
-const STORAGE_KEY = 'contentflow_data_v1';
+const STORAGE_KEY = 'contentflow_multibrand_v2';
 
-// Helper tanggal hari ini (YYYY-MM-DD) lokal
 function getTodayISO() {
   const now = new Date();
   const offset = now.getTimezoneOffset();
@@ -12,10 +11,16 @@ function getTodayISO() {
   return local.toISOString().split('T')[0];
 }
 
-// Data Default Awal
 function getInitialData() {
   const today = getTodayISO();
   return {
+    brands: [
+      { id: 'b-1', name: 'Kasubanyaman', color: '#38bdf8' },
+      { id: 'b-2', name: 'Kopi Hari Ini', color: '#f59e0b' },
+      { id: 'b-3', name: 'icare Service', color: '#10b981' },
+      { id: 'b-4', name: 'Kawarami', color: '#a78bfa' },
+      { id: 'b-5', name: 'LKP Nindya Putri', color: '#fb7185' }
+    ],
     statuses: [
       'Ide / Konsep',
       'Proses Syuting',
@@ -28,52 +33,81 @@ function getInitialData() {
     globalNotif: true,
     tasks: [
       {
-        id: 't-' + Date.now() + '-1',
-        title: 'Take Video & B-Roll Konten Utama Hari Ini',
+        id: 't-101',
+        brandId: 'b-1',
+        title: 'Reels Showcase Produk & Suasana Kasubanyaman',
         date: today,
         time: '10:00',
         status: 'Proses Syuting',
         platform: 'Instagram / Reels',
         notif: true,
         notified: false,
-        note: 'Pastikan pencahayaan cukup, rekam hook 3 detik pertama dengan enerjik.'
+        note: 'Ambil angle estetik pagi hari dan highlight keunggulan produk.'
       },
       {
-        id: 't-' + Date.now() + '-2',
-        title: 'Editing Video & Tambah Subtitle Dinamis',
+        id: 't-102',
+        brandId: 'b-2',
+        title: 'Konten Promo Menu Kopi Hari Ini',
         date: today,
-        time: '15:30',
+        time: '13:00',
         status: 'Editing',
         platform: 'TikTok',
         notif: true,
         notified: false,
-        note: 'Gunakan font tebal di tengah layar, potong jeda napas agar pacing cepat.'
+        note: 'Tambahkan teks harga promo dan musik trending.'
       },
       {
-        id: 't-' + Date.now() + '-3',
-        title: 'Riset Topik & Thumbnail Konten Minggu Depan',
+        id: 't-103',
+        brandId: 'b-3',
+        title: 'Edukasi Tips Perawatan Gadget - icare Service',
         date: today,
-        time: '20:00',
+        time: '15:30',
+        status: 'Siap Upload',
+        platform: 'Instagram / Reels',
+        notif: true,
+        notified: false,
+        note: 'Caption sudah siap, tinggal upload sore ini.'
+      },
+      {
+        id: 't-104',
+        brandId: 'b-4',
+        title: 'Katalog & Story Interaktif Kawarami',
+        date: today,
+        time: '17:00',
         status: 'Ditunda',
-        platform: 'YouTube',
+        platform: 'Instagram / Reels',
         notif: false,
         notified: false,
-        note: 'Menunggu referensi kompetitor selesai dikumpulkan.'
+        note: 'Menunggu foto produk terbaru dari tim.'
+      },
+      {
+        id: 't-105',
+        brandId: 'b-5',
+        title: 'Publikasi Jadwal Pelatihan LKP Nindya Putri',
+        date: today,
+        time: '09:00',
+        status: 'Selesai',
+        platform: 'Facebook / WA',
+        notif: false,
+        notified: true,
+        note: 'Sudah tayang di IG Feed, Facebook, dan status WA.'
       }
     ],
     notes: [
       {
-        id: 'n-' + Date.now() + '-1',
-        title: 'Template Hook Konten Viral',
-        tag: 'Copywriting',
-        body: '1. "Jangan lakukan hal ini kalau kamu masih..."\n2. "Rahasia yang jarang dibahas soal..."\n3. "Cuma modal ini, hasilnya bisa..."',
+        id: 'n-101',
+        brandId: 'b-2',
+        title: 'Konsep Konten Mingguan Kopi Hari Ini',
+        tag: 'Content Plan',
+        body: '- Senin: Behind the scene seduh kopi\n- Rabu: Promo bundling sarapan\n- Jumat: Testimoni pelanggan setia',
         updatedAt: today
       },
       {
-        id: 'n-' + Date.now() + '-2',
-        title: 'Checklist Sebelum Upload',
-        tag: 'SOP Konten',
-        body: '- Cek typo di subtitle\n- Pastikan volume musik latar tidak menutupi suara vokal\n- Siapkan caption + 5 hashtag relevan\n- Pilih cover/thumbnail paling jelas',
+        id: 'n-102',
+        brandId: 'b-5',
+        title: 'Info Pendaftaran Kelas Baru LKP Nindya Putri',
+        tag: 'Brief Poster',
+        body: 'Cantumkan syarat pendaftaran, jadwal kelas pagi/siang, dan kontak admin pendaftaran.',
         updatedAt: today
       }
     ]
@@ -81,6 +115,7 @@ function getInitialData() {
 }
 
 let state = loadState();
+let activeBrandId = 'ALL'; // 'ALL' atau id brand tertentu
 let selectedDate = getTodayISO();
 let selectedStatusFilter = 'ALL';
 
@@ -88,7 +123,9 @@ function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return getInitialData();
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (!parsed.brands || parsed.brands.length === 0) return getInitialData();
+    return parsed;
   } catch (e) {
     return getInitialData();
   }
@@ -99,7 +136,10 @@ function saveState() {
   renderAll();
 }
 
-// Format Tanggal Indonesia
+function getBrandById(id) {
+  return state.brands.find(b => b.id === id) || { id: 'unknown', name: 'Umum', color: '#94a3b8' };
+}
+
 function formatIndoDate(dateStr) {
   if (!dateStr) return '-';
   const [y, m, d] = dateStr.split('-').map(Number);
@@ -112,37 +152,86 @@ function formatIndoDate(dateStr) {
   });
 }
 
-// Toast Alert
 function showToast(msg) {
   const container = document.getElementById('toastContainer');
   const el = document.createElement('div');
   el.className = 'toast';
   el.textContent = msg;
   container.appendChild(el);
-  setTimeout(() => el.remove(), 3500);
+  setTimeout(() => el.remove(), 3200);
 }
 
 // =========================================================
 // NAVIGASI BOTTOM DASHBOARD
 // =========================================================
+function switchTab(targetId) {
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.classList.toggle('active', n.dataset.target === targetId);
+  });
+  document.querySelectorAll('.view-section').forEach(s => {
+    s.classList.toggle('active', s.id === targetId);
+  });
+  if (targetId === 'view-laporan') {
+    renderReport();
+  }
+}
+
 function initNavigation() {
-  const navItems = document.querySelectorAll('.nav-item');
-  const sections = document.querySelectorAll('.view-section');
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.target));
+  });
 
-  navItems.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const targetId = btn.dataset.target;
-      navItems.forEach(n => n.classList.remove('active'));
-      sections.forEach(s => s.classList.remove('active'));
-
-      btn.classList.add('active');
-      document.getElementById(targetId).classList.add('active');
-    });
+  document.getElementById('manageBrandsBtn').addEventListener('click', () => {
+    switchTab('view-pengaturan');
+    document.getElementById('newBrandInput').focus();
   });
 }
 
 // =========================================================
-// RENDERING UI
+// RENDER BRAND SWITCHER & WORKSPACE
+// =========================================================
+function renderBrandSwitcher() {
+  const container = document.getElementById('brandSwitcherList');
+  const allChip = `
+    <button class="brand-chip ${activeBrandId === 'ALL' ? 'active' : ''}" data-brand="ALL">
+      <span class="dot" style="background: linear-gradient(135deg,#38bdf8,#818cf8);"></span>
+      Semua Brand (${state.brands.length})
+    </button>
+  `;
+
+  const brandChips = state.brands.map(b => `
+    <button class="brand-chip ${activeBrandId === b.id ? 'active' : ''}" data-brand="${b.id}">
+      <span class="dot" style="background: ${b.color};"></span>
+      ${escapeHTML(b.name)}
+    </button>
+  `).join('');
+
+  container.innerHTML = allChip + brandChips;
+
+  container.querySelectorAll('.brand-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      activeBrandId = chip.dataset.brand;
+      renderAll();
+    });
+  });
+
+  // Update Banner
+  const bannerTitle = document.getElementById('bannerBrandName');
+  if (activeBrandId === 'ALL') {
+    bannerTitle.textContent = `Semua Brand / Project (${state.brands.length} Aktif)`;
+  } else {
+    const b = getBrandById(activeBrandId);
+    bannerTitle.textContent = b.name;
+  }
+}
+
+function getFilteredTasksByBrand() {
+  if (activeBrandId === 'ALL') return state.tasks;
+  return state.tasks.filter(t => t.brandId === activeBrandId);
+}
+
+// =========================================================
+// RENDERING TASKS & NOTES
 // =========================================================
 function getStatusClass(status) {
   const s = status.toLowerCase();
@@ -153,6 +242,7 @@ function getStatusClass(status) {
 }
 
 function createTaskCardHTML(task) {
+  const brand = getBrandById(task.brandId);
   const isDone = task.status.toLowerCase() === 'selesai';
   const statusOptions = state.statuses
     .map(st => `<option value="${st}" ${st === task.status ? 'selected' : ''}>${st}</option>`)
@@ -162,14 +252,15 @@ function createTaskCardHTML(task) {
     <article class="task-card ${isDone ? 'is-done' : ''}">
       <div class="task-top">
         <div class="task-meta-badges">
-          <span class="badge-platform">${task.platform}</span>
-          <span class="badge-notif ${task.notif ? 'on' : 'off'}" title="Klik untuk ubah notifikasi" onclick="toggleTaskNotif('${task.id}')" style="cursor:pointer;">
-            ${task.notif ? '🔔 Notif Aktif' : '🔕 Tanpa Notif'}
+          <span class="badge-brand-tag" style="background:${brand.color};">${escapeHTML(brand.name)}</span>
+          <span class="badge-platform">${escapeHTML(task.platform)}</span>
+          <span class="badge-notif ${task.notif ? 'on' : 'off'}" onclick="toggleTaskNotif('${task.id}')">
+            ${task.notif ? '🔔 Notif' : '🔕 Senyap'}
           </span>
         </div>
-        <div class="task-controls">
-          <button class="action-icon" onclick="openEditTask('${task.id}')" title="Edit Jadwal">✏️</button>
-          <button class="action-icon delete" onclick="deleteTask('${task.id}')" title="Hapus">🗑️</button>
+        <div>
+          <button class="action-icon" onclick="openEditTask('${task.id}')" title="Edit">✏️</button>
+          <button class="action-icon" onclick="deleteTask('${task.id}')" title="Hapus">🗑️</button>
         </div>
       </div>
 
@@ -191,9 +282,11 @@ function createTaskCardHTML(task) {
 
 function renderStats() {
   const today = getTodayISO();
-  const todayTasks = state.tasks.filter(t => t.date === today);
-  const inProgress = state.tasks.filter(t => ['Editing', 'Proses Syuting', 'Revisi'].includes(t.status));
-  const doneTasks = state.tasks.filter(t => t.status === 'Selesai');
+  const brandTasks = getFilteredTasksByBrand();
+
+  const todayTasks = brandTasks.filter(t => t.date === today);
+  const inProgress = brandTasks.filter(t => ['Editing', 'Proses Syuting', 'Revisi'].includes(t.status));
+  const doneTasks = brandTasks.filter(t => t.status === 'Selesai');
 
   document.getElementById('statToday').textContent = todayTasks.length;
   document.getElementById('statProgress').textContent = inProgress.length;
@@ -220,7 +313,7 @@ function renderFilterPills() {
 
 function renderBerandaList() {
   const container = document.getElementById('todayTaskList');
-  let filtered = state.tasks.filter(t => t.date === selectedDate);
+  let filtered = getFilteredTasksByBrand().filter(t => t.date === selectedDate);
 
   if (selectedStatusFilter !== 'ALL') {
     filtered = filtered.filter(t => t.status === selectedStatusFilter);
@@ -231,8 +324,8 @@ function renderBerandaList() {
   if (filtered.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
-        <h3>Belum ada konten atau tugas pada tanggal ini</h3>
-        <p>Klik tombol <strong>+</strong> di dashboard bawah untuk membuat jadwal baru.</p>
+        <h3>Belum ada jadwal konten pada tanggal ini</h3>
+        <p>Tekan tombol <strong>+</strong> di dashboard bawah untuk menambah tugas baru.</p>
       </div>
     `;
     return;
@@ -246,28 +339,23 @@ function renderAllProjects() {
   const keyword = document.getElementById('searchProjectInput').value.toLowerCase();
   const sortMode = document.getElementById('projectSortSelect').value;
 
-  let list = state.tasks.filter(t =>
-    t.title.toLowerCase().includes(keyword) ||
-    t.platform.toLowerCase().includes(keyword) ||
-    (t.note && t.note.toLowerCase().includes(keyword)) ||
-    t.status.toLowerCase().includes(keyword)
-  );
+  let list = getFilteredTasksByBrand().filter(t => {
+    const brandName = getBrandById(t.brandId).name.toLowerCase();
+    return (
+      t.title.toLowerCase().includes(keyword) ||
+      brandName.includes(keyword) ||
+      t.platform.toLowerCase().includes(keyword) ||
+      (t.note && t.note.toLowerCase().includes(keyword)) ||
+      t.status.toLowerCase().includes(keyword)
+    );
+  });
 
-  if (sortMode === 'date-asc') {
-    list.sort((a, b) => a.date.localeCompare(b.date));
-  } else if (sortMode === 'date-desc') {
-    list.sort((a, b) => b.date.localeCompare(a.date));
-  } else if (sortMode === 'status') {
-    list.sort((a, b) => a.status.localeCompare(b.status));
-  }
+  if (sortMode === 'date-asc') list.sort((a, b) => a.date.localeCompare(b.date));
+  else if (sortMode === 'date-desc') list.sort((a, b) => b.date.localeCompare(a.date));
+  else if (sortMode === 'status') list.sort((a, b) => a.status.localeCompare(b.status));
 
   if (list.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <h3>Tidak ada project ditemukan</h3>
-        <p>Coba kata kunci lain atau tambahkan jadwal konten baru.</p>
-      </div>
-    `;
+    container.innerHTML = `<div class="empty-state"><h3>Tidak ada jadwal ditemukan</h3></div>`;
     return;
   }
 
@@ -276,36 +364,280 @@ function renderAllProjects() {
 
 function renderNotes() {
   const container = document.getElementById('notesGrid');
-  if (state.notes.length === 0) {
+  const notesList = activeBrandId === 'ALL'
+    ? state.notes
+    : state.notes.filter(n => n.brandId === activeBrandId);
+
+  if (notesList.length === 0) {
     container.innerHTML = `
       <div class="empty-state" style="grid-column: 1/-1;">
-        <h3>Belum ada catatan project</h3>
-        <p>Simpan skrip video, ide konten, atau catatan penting di sini.</p>
+        <h3>Belum ada catatan untuk brand ini</h3>
+        <p>Klik <strong>+ Catatan</strong> untuk menyimpan skrip atau ide konten.</p>
       </div>
     `;
     return;
   }
 
-  container.innerHTML = state.notes.map(note => `
-    <article class="note-card">
-      <div>
-        <span class="note-tag">${escapeHTML(note.tag || 'Catatan Umum')}</span>
-        <h3>${escapeHTML(note.title)}</h3>
-        <p>${escapeHTML(note.body)}</p>
-      </div>
-      <div class="note-footer">
-        <span>Diperbarui: ${formatIndoDate(note.updatedAt)}</span>
+  container.innerHTML = notesList.map(note => {
+    const brand = getBrandById(note.brandId);
+    return `
+      <article class="note-card">
         <div>
-          <button class="action-icon" onclick="openEditNote('${note.id}')" title="Edit">✏️</button>
-          <button class="action-icon delete" onclick="deleteNote('${note.id}')" title="Hapus">🗑️</button>
+          <div class="note-badges">
+            <span class="badge-brand-tag" style="background:${brand.color};">${escapeHTML(brand.name)}</span>
+            <span class="note-tag">${escapeHTML(note.tag || 'Catatan')}</span>
+          </div>
+          <h3>${escapeHTML(note.title)}</h3>
+          <p>${escapeHTML(note.body)}</p>
         </div>
-      </div>
-    </article>
-  `).join('');
+        <div class="note-footer">
+          <span>Update: ${formatIndoDate(note.updatedAt)}</span>
+          <div>
+            <button class="action-icon" onclick="openEditNote('${note.id}')">✏️</button>
+            <button class="action-icon" onclick="deleteNote('${note.id}')">🗑️</button>
+          </div>
+        </div>
+      </article>
+    `;
+  }).join('');
 }
 
+// =========================================================
+// LAPORAN RINCI & GRAFIK (PLAIN WHITE BACKGROUND CANVAS)
+// =========================================================
+function populateReportBrandFilter() {
+  const select = document.getElementById('reportBrandFilter');
+  const currentVal = select.value || 'ALL';
+  select.innerHTML = `<option value="ALL">Semua Brand (${state.brands.length})</option>` +
+    state.brands.map(b => `<option value="${b.id}">${escapeHTML(b.name)}</option>`).join('');
+  select.value = currentVal;
+}
+
+function renderReport() {
+  populateReportBrandFilter();
+  const brandFilter = document.getElementById('reportBrandFilter').value;
+  const startDate = document.getElementById('reportStartDate').value;
+  const endDate = document.getElementById('reportEndDate').value;
+
+  let tasks = [...state.tasks];
+  if (brandFilter !== 'ALL') {
+    tasks = tasks.filter(t => t.brandId === brandFilter);
+  }
+  if (startDate) {
+    tasks = tasks.filter(t => t.date >= startDate);
+  }
+  if (endDate) {
+    tasks = tasks.filter(t => t.date <= endDate);
+  }
+
+  tasks.sort((a, b) => a.date.localeCompare(b.date));
+
+  // Header Info
+  const titleBrand = brandFilter === 'ALL' ? 'Semua Brand / Project' : getBrandById(brandFilter).name;
+  document.getElementById('repTitleBrand').textContent = titleBrand;
+
+  let periodLabel = 'Periode: Semua Waktu';
+  if (startDate && endDate) periodLabel = `Periode: ${formatIndoDate(startDate)} s/d ${formatIndoDate(endDate)}`;
+  else if (startDate) periodLabel = `Periode: Mulai ${formatIndoDate(startDate)}`;
+  else if (endDate) periodLabel = `Periode: Sampai ${formatIndoDate(endDate)}`;
+  document.getElementById('repPeriodText').textContent = periodLabel;
+
+  document.getElementById('repGeneratedDate').textContent = formatIndoDate(getTodayISO());
+  document.getElementById('repTotalCount').textContent = `${tasks.length} Konten`;
+
+  // KPI Summary
+  const total = tasks.length;
+  const done = tasks.filter(t => t.status === 'Selesai').length;
+  const inProg = tasks.filter(t => ['Editing', 'Proses Syuting', 'Ide / Konsep', 'Siap Upload'].includes(t.status)).length;
+  const delayed = tasks.filter(t => ['Ditunda', 'Revisi'].includes(t.status)).length;
+  const rate = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  document.getElementById('repKpiTotal').textContent = total;
+  document.getElementById('repKpiDone').textContent = done;
+  document.getElementById('repKpiProgress').textContent = inProg;
+  document.getElementById('repKpiDelayed').textContent = delayed;
+  document.getElementById('repKpiRate').textContent = `${rate}%`;
+
+  // Render Table
+  const tbody = document.getElementById('reportTableBody');
+  if (tasks.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px;color:#6b7280;">Tidak ada data konten pada filter ini.</td></tr>`;
+  } else {
+    tbody.innerHTML = tasks.map((t, idx) => {
+      const b = getBrandById(t.brandId);
+      return `
+        <tr>
+          <td>${idx + 1}</td>
+          <td>${formatIndoDate(t.date)}<br><small style="color:#6b7280;">${t.time || '-'}</small></td>
+          <td><strong>${escapeHTML(b.name)}</strong></td>
+          <td>${escapeHTML(t.title)}</td>
+          <td>${escapeHTML(t.platform)}</td>
+          <td><span class="rep-status-pill">${escapeHTML(t.status)}</span></td>
+          <td>${escapeHTML(t.note || '-')}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // Draw Plain Charts
+  drawStatusBarChart(tasks);
+  drawBrandComparisonChart(startDate, endDate);
+}
+
+function drawStatusBarChart(tasks) {
+  const canvas = document.getElementById('statusChartCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+
+  // Plain white background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, w, h);
+
+  const labels = state.statuses;
+  const counts = labels.map(st => tasks.filter(t => t.status === st).length);
+  const maxVal = Math.max(...counts, 1);
+
+  const padLeft = 36;
+  const padRight = 16;
+  const padTop = 20;
+  const padBottom = 54;
+  const chartW = w - padLeft - padRight;
+  const chartH = h - padTop - padBottom;
+
+  // Axis lines
+  ctx.strokeStyle = '#d1d5db';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padLeft, padTop);
+  ctx.lineTo(padLeft, padTop + chartH);
+  ctx.lineTo(w - padRight, padTop + chartH);
+  ctx.stroke();
+
+  const barGap = 12;
+  const barW = Math.max(16, (chartW - barGap * (labels.length + 1)) / labels.length);
+  const colors = ['#0284c7', '#d97706', '#2563eb', '#e11d48', '#7c3aed', '#64748b', '#059669'];
+
+  labels.forEach((label, i) => {
+    const val = counts[i];
+    const barH = (val / maxVal) * (chartH - 12);
+    const x = padLeft + barGap + i * (barW + barGap);
+    const y = padTop + chartH - barH;
+
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fillRect(x, y, barW, barH);
+
+    // Value label
+    ctx.fillStyle = '#111827';
+    ctx.font = 'bold 11px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(String(val), x + barW / 2, y - 5);
+
+    // X-axis label (shortened)
+    ctx.fillStyle = '#374151';
+    ctx.font = '10px Inter, sans-serif';
+    const shortLabel = label.length > 9 ? label.slice(0, 8) + '..' : label;
+    ctx.fillText(shortLabel, x + barW / 2, padTop + chartH + 16);
+  });
+}
+
+function drawBrandComparisonChart(startDate, endDate) {
+  const canvas = document.getElementById('brandChartCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+
+  // Plain white background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, w, h);
+
+  let tasks = [...state.tasks];
+  if (startDate) tasks = tasks.filter(t => t.date >= startDate);
+  if (endDate) tasks = tasks.filter(t => t.date <= endDate);
+
+  const brands = state.brands;
+  if (brands.length === 0) return;
+
+  const totals = brands.map(b => tasks.filter(t => t.brandId === b.id).length);
+  const dones = brands.map(b => tasks.filter(t => t.brandId === b.id && t.status === 'Selesai').length);
+  const maxVal = Math.max(...totals, 1);
+
+  const padLeft = 115;
+  const padRight = 35;
+  const padTop = 26;
+  const padBottom = 20;
+  const chartW = w - padLeft - padRight;
+  const chartH = h - padTop - padBottom;
+
+  // Legend top
+  ctx.fillStyle = '#3b82f6';
+  ctx.fillRect(padLeft, 6, 10, 10);
+  ctx.fillStyle = '#111827';
+  ctx.font = '11px Inter, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Total Konten', padLeft + 14, 15);
+
+  ctx.fillStyle = '#10b981';
+  ctx.fillRect(padLeft + 95, 6, 10, 10);
+  ctx.fillStyle = '#111827';
+  ctx.fillText('Selesai', padLeft + 109, 15);
+
+  const rowH = chartH / brands.length;
+  const barH = Math.min(12, (rowH - 10) / 2);
+
+  brands.forEach((b, i) => {
+    const yBase = padTop + i * rowH + 6;
+    const totalW = (totals[i] / maxVal) * chartW;
+    const doneW = (dones[i] / maxVal) * chartW;
+
+    // Brand name
+    ctx.fillStyle = '#111827';
+    ctx.font = '600 11px Inter, sans-serif';
+    ctx.textAlign = 'right';
+    const bName = b.name.length > 16 ? b.name.slice(0, 15) + '..' : b.name;
+    ctx.fillText(bName, padLeft - 8, yBase + barH + 2);
+
+    // Total bar
+    ctx.fillStyle = '#3b82f6';
+    ctx.fillRect(padLeft, yBase, totalW, barH);
+
+    // Done bar
+    ctx.fillStyle = '#10b981';
+    ctx.fillRect(padLeft, yBase + barH + 2, doneW, barH);
+
+    // Count text
+    ctx.fillStyle = '#374151';
+    ctx.font = '10px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${dones[i]}/${totals[i]}`, padLeft + Math.max(totalW, doneW) + 6, yBase + barH + 3);
+  });
+}
+
+// =========================================================
+// SETTINGS & BRAND CRUD
+// =========================================================
 function renderSettings() {
   document.getElementById('globalNotifToggle').checked = state.globalNotif;
+
+  // Brand List Management
+  const brandGrid = document.getElementById('brandManageList');
+  brandGrid.innerHTML = state.brands.map(b => {
+    const count = state.tasks.filter(t => t.brandId === b.id).length;
+    return `
+      <div class="brand-manage-card">
+        <div class="brand-manage-info">
+          <span class="brand-color-dot" style="background:${b.color};"></span>
+          <div>
+            <div>${escapeHTML(b.name)}</div>
+            <small style="color:#94a3b8;font-weight:400;">${count} jadwal konten</small>
+          </div>
+        </div>
+        <button class="action-icon" onclick="deleteBrand('${b.id}')" title="Hapus Brand">🗑️</button>
+      </div>
+    `;
+  }).join('');
+
+  // Status tags
   const tagContainer = document.getElementById('activeStatusTags');
   tagContainer.innerHTML = state.statuses.map(st => `
     <span class="status-chip">
@@ -315,7 +647,23 @@ function renderSettings() {
   `).join('');
 }
 
+window.deleteBrand = function(id) {
+  if (state.brands.length <= 1) {
+    showToast('Minimal harus tersisa 1 brand/project.');
+    return;
+  }
+  const b = getBrandById(id);
+  if (!confirm(`Hapus brand "${b.name}" beserta seluruh jadwal & catatannya?`)) return;
+  state.brands = state.brands.filter(item => item.id !== id);
+  state.tasks = state.tasks.filter(t => t.brandId !== id);
+  state.notes = state.notes.filter(n => n.brandId !== id);
+  if (activeBrandId === id) activeBrandId = 'ALL';
+  saveState();
+  showToast(`Brand "${b.name}" dihapus`);
+};
+
 function renderAll() {
+  renderBrandSwitcher();
   renderStats();
   renderFilterPills();
   renderBerandaList();
@@ -323,11 +671,21 @@ function renderAll() {
   renderNotes();
   renderSettings();
   updateNotifIndicator();
+  if (document.getElementById('view-laporan').classList.contains('active')) {
+    renderReport();
+  }
 }
 
 // =========================================================
-// AKSI CRUD TUGAS & CATATAN
+// MODALS & FORM SUBMISSIONS
 // =========================================================
+function populateBrandDropdown(selectId, selectedVal) {
+  const select = document.getElementById(selectId);
+  select.innerHTML = state.brands
+    .map(b => `<option value="${b.id}" ${b.id === selectedVal ? 'selected' : ''}>${escapeHTML(b.name)}</option>`)
+    .join('');
+}
+
 function populateStatusDropdown(selectedVal = 'Ide / Konsep') {
   const select = document.getElementById('taskStatus');
   select.innerHTML = state.statuses
@@ -336,13 +694,14 @@ function populateStatusDropdown(selectedVal = 'Ide / Konsep') {
 }
 
 function openNewTaskModal() {
-  document.getElementById('taskModalTitle').textContent = 'Tambah Jadwal Konten / Tugas';
+  document.getElementById('taskModalTitle').textContent = 'Tambah Jadwal Konten';
   document.getElementById('taskId').value = '';
+  const defaultBrand = activeBrandId !== 'ALL' ? activeBrandId : state.brands[0].id;
+  populateBrandDropdown('taskBrand', defaultBrand);
   document.getElementById('taskTitle').value = '';
   document.getElementById('taskDate').value = selectedDate || getTodayISO();
   document.getElementById('taskTime').value = '09:00';
   populateStatusDropdown('Ide / Konsep');
-  document.getElementById('taskPlatform').value = 'Instagram / Reels';
   document.getElementById('taskNotif').checked = true;
   document.getElementById('taskNote').value = '';
   document.getElementById('taskModal').classList.remove('hidden');
@@ -353,6 +712,7 @@ window.openEditTask = function(id) {
   if (!task) return;
   document.getElementById('taskModalTitle').textContent = 'Edit Jadwal Konten';
   document.getElementById('taskId').value = task.id;
+  populateBrandDropdown('taskBrand', task.brandId);
   document.getElementById('taskTitle').value = task.title;
   document.getElementById('taskDate').value = task.date;
   document.getElementById('taskTime').value = task.time || '';
@@ -389,10 +749,11 @@ window.deleteTask = function(id) {
   showToast('Jadwal dihapus');
 };
 
-// Notes CRUD
 function openNewNoteModal() {
   document.getElementById('noteModalTitle').textContent = 'Catatan Project Baru';
   document.getElementById('noteId').value = '';
+  const defaultBrand = activeBrandId !== 'ALL' ? activeBrandId : state.brands[0].id;
+  populateBrandDropdown('noteBrand', defaultBrand);
   document.getElementById('noteTitle').value = '';
   document.getElementById('noteTag').value = '';
   document.getElementById('noteBody').value = '';
@@ -404,6 +765,7 @@ window.openEditNote = function(id) {
   if (!note) return;
   document.getElementById('noteModalTitle').textContent = 'Edit Catatan Project';
   document.getElementById('noteId').value = note.id;
+  populateBrandDropdown('noteBrand', note.brandId);
   document.getElementById('noteTitle').value = note.title;
   document.getElementById('noteTag').value = note.tag || '';
   document.getElementById('noteBody').value = note.body;
@@ -420,11 +782,10 @@ window.deleteNote = function(id) {
 window.removeCustomStatus = function(st) {
   state.statuses = state.statuses.filter(s => s !== st);
   saveState();
-  showToast(`Status "${st}" dihapus`);
 };
 
 // =========================================================
-// SISTEM NOTIFIKASI PENGINGAT
+// NOTIFICATIONS & HELPERS
 // =========================================================
 function updateNotifIndicator() {
   const dot = document.getElementById('notifStatusDot');
@@ -437,19 +798,13 @@ function updateNotifIndicator() {
 
 function requestBrowserNotification() {
   if (!('Notification' in window)) {
-    showToast('Browser ini tidak mendukung notifikasi sistem.');
+    showToast('Browser tidak mendukung notifikasi sistem.');
     return;
   }
   Notification.requestPermission().then(perm => {
     updateNotifIndicator();
     if (perm === 'granted') {
       showToast('Notifikasi browser aktif! 🔔');
-      new Notification('ContentFlow Siap!', {
-        body: 'Kamu akan menerima pengingat sesuai jadwal kontenmu.',
-        icon: 'logo.svg'
-      });
-    } else {
-      showToast('Izin notifikasi ditolak browser.');
     }
   });
 }
@@ -458,26 +813,16 @@ function checkScheduledNotifications() {
   if (!state.globalNotif) return;
   const now = new Date();
   const today = getTodayISO();
-  const hh = String(now.getHours()).padStart(2, '0');
-  const mm = String(now.getMinutes()).padStart(2, '0');
-  const currentTime = `${hh}:${mm}`;
+  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
   state.tasks.forEach(task => {
-    if (
-      task.notif &&
-      !task.notified &&
-      task.status !== 'Selesai' &&
-      task.date === today &&
-      task.time === currentTime
-    ) {
+    if (task.notif && !task.notified && task.status !== 'Selesai' && task.date === today && task.time === currentTime) {
       task.notified = true;
       saveState();
-      showToast(`⏰ Waktunya: ${task.title}`);
+      const b = getBrandById(task.brandId);
+      showToast(`⏰ [${b.name}] ${task.title}`);
       if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(`Pengingat Konten: ${task.platform}`, {
-          body: `${task.title} (${task.status})`,
-          icon: 'logo.svg'
-        });
+        new Notification(`Pengingat: ${b.name}`, { body: task.title, icon: 'logo.svg' });
       }
     }
   });
@@ -492,16 +837,12 @@ function escapeHTML(str) {
 }
 
 // =========================================================
-// INISIALISASI EVENT LISTENER
+// INIT
 // =========================================================
 document.addEventListener('DOMContentLoaded', () => {
-  // Set header date
   const today = getTodayISO();
   document.getElementById('headerDate').textContent = new Date().toLocaleDateString('id-ID', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
   });
 
   const dateInput = document.getElementById('filterDateInput');
@@ -517,22 +858,20 @@ document.addEventListener('DOMContentLoaded', () => {
     renderBerandaList();
   });
 
-  // Modal Triggers
   document.getElementById('fabAddTask').addEventListener('click', openNewTaskModal);
   document.getElementById('quickAddTopBtn').addEventListener('click', openNewTaskModal);
   document.getElementById('addNoteBtn').addEventListener('click', openNewNoteModal);
 
   document.querySelectorAll('[data-close]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.getElementById(btn.dataset.close).classList.add('hidden');
-    });
+    btn.addEventListener('click', () => document.getElementById(btn.dataset.close).classList.add('hidden'));
   });
 
-  // Submit Task Form
+  // Save Task
   document.getElementById('taskForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const id = document.getElementById('taskId').value;
     const payload = {
+      brandId: document.getElementById('taskBrand').value,
       title: document.getElementById('taskTitle').value.trim(),
       date: document.getElementById('taskDate').value,
       time: document.getElementById('taskTime').value,
@@ -546,23 +885,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (id) {
       const idx = state.tasks.findIndex(t => t.id === id);
       if (idx !== -1) state.tasks[idx] = { ...state.tasks[idx], ...payload };
-      showToast('Jadwal berhasil diperbarui');
+      showToast('Jadwal diperbarui');
     } else {
       state.tasks.unshift({ id: 't-' + Date.now(), ...payload });
-      showToast('Jadwal konten baru ditambahkan');
+      showToast('Jadwal baru ditambahkan');
     }
 
     document.getElementById('taskModal').classList.add('hidden');
     saveState();
   });
 
-  // Submit Note Form
+  // Save Note
   document.getElementById('noteForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const id = document.getElementById('noteId').value;
     const payload = {
+      brandId: document.getElementById('noteBrand').value,
       title: document.getElementById('noteTitle').value.trim(),
-      tag: document.getElementById('noteTag').value.trim() || 'Catatan Project',
+      tag: document.getElementById('noteTag').value.trim() || 'Catatan',
       body: document.getElementById('noteBody').value.trim(),
       updatedAt: getTodayISO()
     };
@@ -573,31 +913,71 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('Catatan diperbarui');
     } else {
       state.notes.unshift({ id: 'n-' + Date.now(), ...payload });
-      showToast('Catatan project disimpan');
+      showToast('Catatan disimpan');
     }
 
     document.getElementById('noteModal').classList.add('hidden');
     saveState();
   });
 
+  // Add Brand
+  document.getElementById('addBrandBtn').addEventListener('click', () => {
+    const input = document.getElementById('newBrandInput');
+    const colorInput = document.getElementById('newBrandColor');
+    const name = input.value.trim();
+    if (!name) return;
+    state.brands.push({
+      id: 'b-' + Date.now(),
+      name,
+      color: colorInput.value || '#38bdf8'
+    });
+    input.value = '';
+    saveState();
+    showToast(`Brand "${name}" ditambahkan!`);
+  });
+
   // Search & Sort
   document.getElementById('searchProjectInput').addEventListener('input', renderAllProjects);
   document.getElementById('projectSortSelect').addEventListener('change', renderAllProjects);
 
-  // Notification button & global toggle
+  // Report Filters & Exports
+  document.getElementById('reportBrandFilter').addEventListener('change', renderReport);
+  document.getElementById('reportStartDate').addEventListener('change', renderReport);
+  document.getElementById('reportEndDate').addEventListener('change', renderReport);
+  document.getElementById('printReportBtn').addEventListener('click', () => window.print());
+
+  document.getElementById('exportCsvBtn').addEventListener('click', () => {
+    const rows = [['No', 'Tanggal', 'Jam', 'Brand', 'Judul Konten', 'Platform', 'Status', 'Catatan']];
+    state.tasks.forEach((t, i) => {
+      rows.push([
+        i + 1,
+        t.date,
+        t.time || '',
+        getBrandById(t.brandId).name,
+        `"${t.title.replace(/"/g, '""')}"`,
+        t.platform,
+        t.status,
+        `"${(t.note || '').replace(/"/g, '""')}"`
+      ]);
+    });
+    const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(r => r.join(',')).join('\n');
+    const link = document.createElement('a');
+    link.setAttribute('href', encodeURI(csvContent));
+    link.setAttribute('download', `laporan-konten-${getTodayISO()}.csv`);
+    link.click();
+  });
+
+  // Notifications & Custom Status
   document.getElementById('notifPermBtn').addEventListener('click', requestBrowserNotification);
   document.getElementById('globalNotifToggle').addEventListener('change', (e) => {
     state.globalNotif = e.target.checked;
     saveState();
-    showToast(state.globalNotif ? 'Notifikasi global aktif' : 'Notifikasi global nonaktif');
   });
 
-  // Custom Status
   document.getElementById('addCustomStatusBtn').addEventListener('click', () => {
     const input = document.getElementById('newStatusInput');
     const val = input.value.trim();
-    if (!val) return;
-    if (!state.statuses.includes(val)) {
+    if (val && !state.statuses.includes(val)) {
       state.statuses.push(val);
       input.value = '';
       saveState();
@@ -605,13 +985,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Export & Import JSON
+  // Export/Import JSON & Reset
   document.getElementById('exportDataBtn').addEventListener('click', () => {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `contentflow-backup-${getTodayISO()}.json`;
+    a.download = `contentflow-multibrand-backup-${getTodayISO()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   });
@@ -623,10 +1003,10 @@ document.addEventListener('DOMContentLoaded', () => {
     reader.onload = (ev) => {
       try {
         const imported = JSON.parse(ev.target.result);
-        if (imported.tasks && imported.notes) {
+        if (imported.tasks && imported.brands) {
           state = imported;
           saveState();
-          showToast('Data berhasil dipulihkan!');
+          showToast('Backup data berhasil dipulihkan!');
         }
       } catch (err) {
         showToast('File JSON tidak valid.');
@@ -635,12 +1015,12 @@ document.addEventListener('DOMContentLoaded', () => {
     reader.readAsText(file);
   });
 
-  // Reset Demo Data
   document.getElementById('resetDemoBtn').addEventListener('click', () => {
-    if (!confirm('Kembalikan semua data ke contoh awal?')) return;
+    if (!confirm('Kembalikan ke 5 brand default & data awal?')) return;
     state = getInitialData();
+    activeBrandId = 'ALL';
     saveState();
-    showToast('Data direset ke pengaturan awal');
+    showToast('Data dikembalikan ke pengaturan awal');
   });
 
   initNavigation();

@@ -1,7 +1,7 @@
 {
-  "name": "ContentFlow — Manajemen Konten & To-Do",
+  "name": "ContentFlow Multi-Brand — Manajemen Konten Offline",
   "short_name": "ContentFlow",
-  "description": "Aplikasi To-Do List, Penjadwalan Konten, Catatan Project, dan Pengingat.",
+  "description": "Aplikasi Offline To-Do List, Penjadwalan Konten Multi-Brand, Catatan Project, dan Laporan Grafik.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0b1120",

@@ -1,19 +1,18 @@
-# ContentFlow — Aplikasi To-Do List & Manajemen Konten
+# ContentFlow Multi-Brand (Offline Mode)
 
-Aplikasi web ringan, rapi, dan responsif untuk mengelola jadwal pembuatan konten harian, status progres (*Selesai, Editing, Ditunda, Proses Syuting*, dll.), pengingat notifikasi per tugas, serta catatan project.
+Aplikasi manajemen konten, To-Do List, catatan project, dan laporan grafik rinci untuk mengelola banyak brand sekaligus secara **100% offline** di browser.
+
+## Brand / Project Bawaan
+1. **Kasubanyaman**
+2. **Kopi Hari Ini**
+3. **icare Service**
+4. **Kawarami**
+5. **LKP Nindya Putri**
+
+*(Kamu juga bisa menambah brand/project baru atau menghapus brand yang ada kapan saja).*
 
 ## Fitur Utama
-- **Navigasi Dashboard Bawah (Bottom Bar)**: Akses cepat ke **Beranda**, **Semua Project**, tombol cepat **+ (Tambah)**, **Catatan**, dan **Setelan**.
-- **Jadwal Harian & Filter Tanggal**: Lihat apa saja konten atau tugas yang harus dikerjakan hari ini atau tanggal tertentu.
-- **Status Fleksibel & Kustom**: Ubah status langsung dari kartu tugas (*Ide / Konsep, Proses Syuting, Editing, Revisi, Siap Upload, Ditunda, Selesai*) atau tambah status baru di menu Setelan.
-- **Pengaturan Notifikasi Per Item**: Aktifkan atau nonaktifkan pengingat notifikasi untuk setiap tugas/konten secara terpisah.
-- **Catatan Project**: Ruang khusus untuk menyimpan skrip, hook konten, SOP, atau ide project.
-- **Backup & Restore JSON**: Ekspor dan impor data kapan saja agar aman.
-
-## Cara Upload & Online-kan Gratis di GitHub Pages
-1. Buat repository baru di GitHub (misalnya bernama `contentflow-app`).
-2. Upload semua file yang ada di dalam folder ini (`index.html`, `style.css`, `app.js`, `logo.svg`, `manifest.json`, `README.md`) ke repository tersebut.
-3. Buka tab **Settings** > **Pages** di repository GitHub kamu.
-4. Pada bagian **Build and deployment > Source**, pilih **Deploy from a branch**.
-5. Pilih branch `main` (atau `master`) dan folder `/ (root)`, lalu klik **Save**.
-6. Tunggu 1–2 menit, tautan aplikasi kamu akan muncul dan siap dibuka dari HP maupun laptop!
+- **Multi-Brand Workspace**: Beralih cepat antar 5 brand atau lihat gabungan semua brand sekaligus.
+- **Tambah & Hapus Brand**: Atur nama dan warna label brand di tab **Setelan** atau lewat tombol **+ Brand**.
+- **Laporan Rinci & Grafik Latar Polos**: Tab **Laporan** menyajikan ringkasan KPI, grafik distribusi status, grafik perbandingan antar brand dengan latar belakang putih polos yang bersih, tabel rincian lengkap, serta tombol **Cetak / Simpan PDF** dan **Export CSV**.
+- **100% Offline**: Seluruh data tersimpan otomatis di penyimpanan lokal browser (`localStorage`), dilengkapi fitur backup & restore JSON.
