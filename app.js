@@ -2,7 +2,7 @@
    ContentFlow Multi-Brand — Offline Storage, Brands & Reports
    ========================================================= */
 
-const STORAGE_KEY = 'contentflow_multibrand_v2';
+const STORAGE_KEY = 'contentflow_multibrand_v2_2';
 
 function getTodayISO() {
   const now = new Date();
@@ -11,25 +11,33 @@ function getTodayISO() {
   return local.toISOString().split('T')[0];
 }
 
+function getDefaultBrands() {
+  return [
+    { id: 'b-1', name: 'Kasubanyaman', color: '#38bdf8' },
+    { id: 'b-2', name: 'Kopi Hari Ini', color: '#f59e0b' },
+    { id: 'b-3', name: 'icare Service', color: '#10b981' },
+    { id: 'b-4', name: 'Kawarami', color: '#a78bfa' },
+    { id: 'b-5', name: 'LKP Nindya Putri', color: '#fb7185' }
+  ];
+}
+
+function getDefaultStatuses() {
+  return [
+    'Ide / Konsep',
+    'Proses Syuting',
+    'Editing',
+    'Revisi',
+    'Siap Upload',
+    'Ditunda',
+    'Selesai'
+  ];
+}
+
 function getInitialData() {
   const today = getTodayISO();
   return {
-    brands: [
-      { id: 'b-1', name: 'Kasubanyaman', color: '#38bdf8' },
-      { id: 'b-2', name: 'Kopi Hari Ini', color: '#f59e0b' },
-      { id: 'b-3', name: 'icare Service', color: '#10b981' },
-      { id: 'b-4', name: 'Kawarami', color: '#a78bfa' },
-      { id: 'b-5', name: 'LKP Nindya Putri', color: '#fb7185' }
-    ],
-    statuses: [
-      'Ide / Konsep',
-      'Proses Syuting',
-      'Editing',
-      'Revisi',
-      'Siap Upload',
-      'Ditunda',
-      'Selesai'
-    ],
+    brands: getDefaultBrands(),
+    statuses: getDefaultStatuses(),
     globalNotif: true,
     tasks: [
       {
@@ -115,16 +123,23 @@ function getInitialData() {
 }
 
 let state = loadState();
-let activeBrandId = 'ALL'; // 'ALL' atau id brand tertentu
+let activeBrandId = 'ALL';
 let selectedDate = getTodayISO();
 let selectedStatusFilter = 'ALL';
 
 function loadState() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('contentflow_multibrand_v2');
     if (!raw) return getInitialData();
     const parsed = JSON.parse(raw);
-    if (!parsed.brands || parsed.brands.length === 0) return getInitialData();
+    if (!Array.isArray(parsed.brands) || parsed.brands.length === 0) {
+      parsed.brands = getDefaultBrands();
+    }
+    if (!Array.isArray(parsed.statuses) || parsed.statuses.length === 0) {
+      parsed.statuses = getDefaultStatuses();
+    }
+    if (!Array.isArray(parsed.tasks)) parsed.tasks = [];
+    if (!Array.isArray(parsed.notes)) parsed.notes = [];
     return parsed;
   } catch (e) {
     return getInitialData();
@@ -132,12 +147,33 @@ function loadState() {
 }
 
 function saveState() {
+  if (!Array.isArray(state.brands) || state.brands.length === 0) {
+    state.brands = getDefaultBrands();
+  }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   renderAll();
 }
 
+function addNewBrand(name, color) {
+  const cleanName = (name || '').trim();
+  if (!cleanName) return null;
+  const existing = state.brands.find(b => b.name.toLowerCase() === cleanName.toLowerCase());
+  if (existing) return existing;
+
+  const palette = ['#38bdf8', '#f59e0b', '#10b981', '#a78bfa', '#fb7185', '#22d3ee', '#f97316'];
+  const pickedColor = color || palette[state.brands.length % palette.length];
+  const newBrand = {
+    id: 'b-' + Date.now() + '-' + Math.floor(Math.random() * 100),
+    name: cleanName,
+    color: pickedColor
+  };
+  state.brands.push(newBrand);
+  saveState();
+  return newBrand;
+}
+
 function getBrandById(id) {
-  return state.brands.find(b => b.id === id) || { id: 'unknown', name: 'Umum', color: '#94a3b8' };
+  return state.brands.find(b => b.id === id) || state.brands[0] || { id: 'b-1', name: 'Kasubanyaman', color: '#38bdf8' };
 }
 
 function formatIndoDate(dateStr) {
@@ -215,7 +251,6 @@ function renderBrandSwitcher() {
     });
   });
 
-  // Update Banner
   const bannerTitle = document.getElementById('bannerBrandName');
   if (activeBrandId === 'ALL') {
     bannerTitle.textContent = `Semua Brand / Project (${state.brands.length} Aktif)`;
@@ -234,7 +269,7 @@ function getFilteredTasksByBrand() {
 // RENDERING TASKS & NOTES
 // =========================================================
 function getStatusClass(status) {
-  const s = status.toLowerCase();
+  const s = (status || '').toLowerCase();
   if (s === 'selesai') return 'status-selesai';
   if (s === 'editing' || s === 'proses syuting') return 'status-editing';
   if (s === 'ditunda' || s === 'revisi') return 'status-ditunda';
@@ -243,9 +278,9 @@ function getStatusClass(status) {
 
 function createTaskCardHTML(task) {
   const brand = getBrandById(task.brandId);
-  const isDone = task.status.toLowerCase() === 'selesai';
+  const isDone = (task.status || '').toLowerCase() === 'selesai';
   const statusOptions = state.statuses
-    .map(st => `<option value="${st}" ${st === task.status ? 'selected' : ''}>${st}</option>`)
+    .map(st => `<option value="${escapeHTML(st)}" ${st === task.status ? 'selected' : ''}>${escapeHTML(st)}</option>`)
     .join('');
 
   return `
@@ -299,7 +334,7 @@ function renderFilterPills() {
   container.innerHTML = allPills.map(st => {
     const label = st === 'ALL' ? 'Semua Status' : st;
     const active = selectedStatusFilter === st ? 'active' : '';
-    return `<button class="pill ${active}" data-status="${st}">${label}</button>`;
+    return `<button class="pill ${active}" data-status="${escapeHTML(st)}">${escapeHTML(label)}</button>`;
   }).join('');
 
   container.querySelectorAll('.pill').forEach(pill => {
@@ -346,13 +381,13 @@ function renderAllProjects() {
       brandName.includes(keyword) ||
       t.platform.toLowerCase().includes(keyword) ||
       (t.note && t.note.toLowerCase().includes(keyword)) ||
-      t.status.toLowerCase().includes(keyword)
+      (t.status || '').toLowerCase().includes(keyword)
     );
   });
 
   if (sortMode === 'date-asc') list.sort((a, b) => a.date.localeCompare(b.date));
   else if (sortMode === 'date-desc') list.sort((a, b) => b.date.localeCompare(a.date));
-  else if (sortMode === 'status') list.sort((a, b) => a.status.localeCompare(b.status));
+  else if (sortMode === 'status') list.sort((a, b) => (a.status || '').localeCompare(b.status || ''));
 
   if (list.length === 0) {
     container.innerHTML = `<div class="empty-state"><h3>Tidak ada jadwal ditemukan</h3></div>`;
@@ -403,13 +438,13 @@ function renderNotes() {
 }
 
 // =========================================================
-// LAPORAN RINCI & GRAFIK (PLAIN WHITE BACKGROUND CANVAS)
+// LAPORAN RINCI & GRAFIK
 // =========================================================
 function populateReportBrandFilter() {
   const select = document.getElementById('reportBrandFilter');
   const currentVal = select.value || 'ALL';
   select.innerHTML = `<option value="ALL">Semua Brand (${state.brands.length})</option>` +
-    state.brands.map(b => `<option value="${b.id}">${escapeHTML(b.name)}</option>`).join('');
+    state.brands.map(b => `<option value="${escapeHTML(b.id)}">${escapeHTML(b.name)}</option>`).join('');
   select.value = currentVal;
 }
 
@@ -420,19 +455,12 @@ function renderReport() {
   const endDate = document.getElementById('reportEndDate').value;
 
   let tasks = [...state.tasks];
-  if (brandFilter !== 'ALL') {
-    tasks = tasks.filter(t => t.brandId === brandFilter);
-  }
-  if (startDate) {
-    tasks = tasks.filter(t => t.date >= startDate);
-  }
-  if (endDate) {
-    tasks = tasks.filter(t => t.date <= endDate);
-  }
+  if (brandFilter !== 'ALL') tasks = tasks.filter(t => t.brandId === brandFilter);
+  if (startDate) tasks = tasks.filter(t => t.date >= startDate);
+  if (endDate) tasks = tasks.filter(t => t.date <= endDate);
 
   tasks.sort((a, b) => a.date.localeCompare(b.date));
 
-  // Header Info
   const titleBrand = brandFilter === 'ALL' ? 'Semua Brand / Project' : getBrandById(brandFilter).name;
   document.getElementById('repTitleBrand').textContent = titleBrand;
 
@@ -445,7 +473,6 @@ function renderReport() {
   document.getElementById('repGeneratedDate').textContent = formatIndoDate(getTodayISO());
   document.getElementById('repTotalCount').textContent = `${tasks.length} Konten`;
 
-  // KPI Summary
   const total = tasks.length;
   const done = tasks.filter(t => t.status === 'Selesai').length;
   const inProg = tasks.filter(t => ['Editing', 'Proses Syuting', 'Ide / Konsep', 'Siap Upload'].includes(t.status)).length;
@@ -458,7 +485,6 @@ function renderReport() {
   document.getElementById('repKpiDelayed').textContent = delayed;
   document.getElementById('repKpiRate').textContent = `${rate}%`;
 
-  // Render Table
   const tbody = document.getElementById('reportTableBody');
   if (tasks.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px;color:#6b7280;">Tidak ada data konten pada filter ini.</td></tr>`;
@@ -479,7 +505,6 @@ function renderReport() {
     }).join('');
   }
 
-  // Draw Plain Charts
   drawStatusBarChart(tasks);
   drawBrandComparisonChart(startDate, endDate);
 }
@@ -490,7 +515,6 @@ function drawStatusBarChart(tasks) {
   const w = canvas.width;
   const h = canvas.height;
 
-  // Plain white background
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, w, h);
 
@@ -505,7 +529,6 @@ function drawStatusBarChart(tasks) {
   const chartW = w - padLeft - padRight;
   const chartH = h - padTop - padBottom;
 
-  // Axis lines
   ctx.strokeStyle = '#d1d5db';
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -527,13 +550,11 @@ function drawStatusBarChart(tasks) {
     ctx.fillStyle = colors[i % colors.length];
     ctx.fillRect(x, y, barW, barH);
 
-    // Value label
     ctx.fillStyle = '#111827';
     ctx.font = 'bold 11px Inter, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(String(val), x + barW / 2, y - 5);
 
-    // X-axis label (shortened)
     ctx.fillStyle = '#374151';
     ctx.font = '10px Inter, sans-serif';
     const shortLabel = label.length > 9 ? label.slice(0, 8) + '..' : label;
@@ -547,7 +568,6 @@ function drawBrandComparisonChart(startDate, endDate) {
   const w = canvas.width;
   const h = canvas.height;
 
-  // Plain white background
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, w, h);
 
@@ -569,7 +589,6 @@ function drawBrandComparisonChart(startDate, endDate) {
   const chartW = w - padLeft - padRight;
   const chartH = h - padTop - padBottom;
 
-  // Legend top
   ctx.fillStyle = '#3b82f6';
   ctx.fillRect(padLeft, 6, 10, 10);
   ctx.fillStyle = '#111827';
@@ -590,22 +609,18 @@ function drawBrandComparisonChart(startDate, endDate) {
     const totalW = (totals[i] / maxVal) * chartW;
     const doneW = (dones[i] / maxVal) * chartW;
 
-    // Brand name
     ctx.fillStyle = '#111827';
     ctx.font = '600 11px Inter, sans-serif';
     ctx.textAlign = 'right';
     const bName = b.name.length > 16 ? b.name.slice(0, 15) + '..' : b.name;
     ctx.fillText(bName, padLeft - 8, yBase + barH + 2);
 
-    // Total bar
     ctx.fillStyle = '#3b82f6';
     ctx.fillRect(padLeft, yBase, totalW, barH);
 
-    // Done bar
     ctx.fillStyle = '#10b981';
     ctx.fillRect(padLeft, yBase + barH + 2, doneW, barH);
 
-    // Count text
     ctx.fillStyle = '#374151';
     ctx.font = '10px Inter, sans-serif';
     ctx.textAlign = 'left';
@@ -619,7 +634,6 @@ function drawBrandComparisonChart(startDate, endDate) {
 function renderSettings() {
   document.getElementById('globalNotifToggle').checked = state.globalNotif;
 
-  // Brand List Management
   const brandGrid = document.getElementById('brandManageList');
   brandGrid.innerHTML = state.brands.map(b => {
     const count = state.tasks.filter(t => t.brandId === b.id).length;
@@ -637,12 +651,11 @@ function renderSettings() {
     `;
   }).join('');
 
-  // Status tags
   const tagContainer = document.getElementById('activeStatusTags');
   tagContainer.innerHTML = state.statuses.map(st => `
     <span class="status-chip">
       ${escapeHTML(st)}
-      ${['Selesai', 'Editing', 'Ditunda'].includes(st) ? '' : `<button onclick="removeCustomStatus('${st}')" style="background:none;border:none;color:#fb7185;cursor:pointer;font-weight:bold;">&times;</button>`}
+      ${['Selesai', 'Editing', 'Ditunda'].includes(st) ? '' : `<button onclick="removeCustomStatus('${escapeHTML(st)}')" style="background:none;border:none;color:#fb7185;cursor:pointer;font-weight:bold;">&times;</button>`}
     </span>
   `).join('');
 }
@@ -680,24 +693,45 @@ function renderAll() {
 // MODALS & FORM SUBMISSIONS
 // =========================================================
 function populateBrandDropdown(selectId, selectedVal) {
+  if (!Array.isArray(state.brands) || state.brands.length === 0) {
+    state.brands = getDefaultBrands();
+  }
   const select = document.getElementById(selectId);
-  select.innerHTML = state.brands
-    .map(b => `<option value="${b.id}" ${b.id === selectedVal ? 'selected' : ''}>${escapeHTML(b.name)}</option>`)
-    .join('');
+  select.innerHTML = '';
+  state.brands.forEach(b => {
+    const opt = document.createElement('option');
+    opt.value = b.id;
+    opt.textContent = b.name;
+    if (b.id === selectedVal) opt.selected = true;
+    select.appendChild(opt);
+  });
+  if (!select.value && state.brands[0]) {
+    select.value = state.brands[0].id;
+  }
 }
 
 function populateStatusDropdown(selectedVal = 'Ide / Konsep') {
+  if (!Array.isArray(state.statuses) || state.statuses.length === 0) {
+    state.statuses = getDefaultStatuses();
+  }
   const select = document.getElementById('taskStatus');
-  select.innerHTML = state.statuses
-    .map(st => `<option value="${st}" ${st === selectedVal ? 'selected' : ''}>${st}</option>`)
-    .join('');
+  select.innerHTML = '';
+  state.statuses.forEach(st => {
+    const opt = document.createElement('option');
+    opt.value = st;
+    opt.textContent = st;
+    if (st === selectedVal) opt.selected = true;
+    select.appendChild(opt);
+  });
 }
 
 function openNewTaskModal() {
-  document.getElementById('taskModalTitle').textContent = 'Tambah Jadwal Konten';
+  document.getElementById('taskModalTitle').textContent = 'Tambah Jadwal Konten / Tugas';
   document.getElementById('taskId').value = '';
   const defaultBrand = activeBrandId !== 'ALL' ? activeBrandId : state.brands[0].id;
   populateBrandDropdown('taskBrand', defaultBrand);
+  document.getElementById('inlineNewTaskBrandBox').classList.add('hidden');
+  document.getElementById('inlineTaskBrandName').value = '';
   document.getElementById('taskTitle').value = '';
   document.getElementById('taskDate').value = selectedDate || getTodayISO();
   document.getElementById('taskTime').value = '09:00';
@@ -713,6 +747,7 @@ window.openEditTask = function(id) {
   document.getElementById('taskModalTitle').textContent = 'Edit Jadwal Konten';
   document.getElementById('taskId').value = task.id;
   populateBrandDropdown('taskBrand', task.brandId);
+  document.getElementById('inlineNewTaskBrandBox').classList.add('hidden');
   document.getElementById('taskTitle').value = task.title;
   document.getElementById('taskDate').value = task.date;
   document.getElementById('taskTime').value = task.time || '';
@@ -754,6 +789,8 @@ function openNewNoteModal() {
   document.getElementById('noteId').value = '';
   const defaultBrand = activeBrandId !== 'ALL' ? activeBrandId : state.brands[0].id;
   populateBrandDropdown('noteBrand', defaultBrand);
+  document.getElementById('inlineNewNoteBrandBox').classList.add('hidden');
+  document.getElementById('inlineNoteBrandName').value = '';
   document.getElementById('noteTitle').value = '';
   document.getElementById('noteTag').value = '';
   document.getElementById('noteBody').value = '';
@@ -766,6 +803,7 @@ window.openEditNote = function(id) {
   document.getElementById('noteModalTitle').textContent = 'Edit Catatan Project';
   document.getElementById('noteId').value = note.id;
   populateBrandDropdown('noteBrand', note.brandId);
+  document.getElementById('inlineNewNoteBrandBox').classList.add('hidden');
   document.getElementById('noteTitle').value = note.title;
   document.getElementById('noteTag').value = note.tag || '';
   document.getElementById('noteBody').value = note.body;
@@ -784,9 +822,6 @@ window.removeCustomStatus = function(st) {
   saveState();
 };
 
-// =========================================================
-// NOTIFICATIONS & HELPERS
-// =========================================================
 function updateNotifIndicator() {
   const dot = document.getElementById('notifStatusDot');
   if ('Notification' in window && Notification.permission === 'granted') {
@@ -866,12 +901,65 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => document.getElementById(btn.dataset.close).classList.add('hidden'));
   });
 
-  // Save Task
+  // Inline brand creator di Modal Tugas
+  document.getElementById('toggleNewTaskBrandBtn').addEventListener('click', () => {
+    const box = document.getElementById('inlineNewTaskBrandBox');
+    box.classList.toggle('hidden');
+    if (!box.classList.contains('hidden')) {
+      document.getElementById('inlineTaskBrandName').focus();
+    }
+  });
+
+  document.getElementById('saveInlineTaskBrandBtn').addEventListener('click', () => {
+    const input = document.getElementById('inlineTaskBrandName');
+    const created = addNewBrand(input.value);
+    if (!created) {
+      showToast('Ketik nama brand terlebih dahulu');
+      return;
+    }
+    populateBrandDropdown('taskBrand', created.id);
+    input.value = '';
+    document.getElementById('inlineNewTaskBrandBox').classList.add('hidden');
+    showToast(`Brand "${created.name}" dipilih!`);
+  });
+
+  // Inline brand creator di Modal Catatan
+  document.getElementById('toggleNewNoteBrandBtn').addEventListener('click', () => {
+    const box = document.getElementById('inlineNewNoteBrandBox');
+    box.classList.toggle('hidden');
+    if (!box.classList.contains('hidden')) {
+      document.getElementById('inlineNoteBrandName').focus();
+    }
+  });
+
+  document.getElementById('saveInlineNoteBrandBtn').addEventListener('click', () => {
+    const input = document.getElementById('inlineNoteBrandName');
+    const created = addNewBrand(input.value);
+    if (!created) {
+      showToast('Ketik nama brand terlebih dahulu');
+      return;
+    }
+    populateBrandDropdown('noteBrand', created.id);
+    input.value = '';
+    document.getElementById('inlineNewNoteBrandBox').classList.add('hidden');
+    showToast(`Brand "${created.name}" dipilih!`);
+  });
+
   document.getElementById('taskForm').addEventListener('submit', (e) => {
     e.preventDefault();
+    const inlineTyped = document.getElementById('inlineTaskBrandName').value.trim();
+    let chosenBrandId = document.getElementById('taskBrand').value;
+    if (inlineTyped) {
+      const created = addNewBrand(inlineTyped);
+      if (created) chosenBrandId = created.id;
+    }
+    if (!chosenBrandId) {
+      chosenBrandId = state.brands[0].id;
+    }
+
     const id = document.getElementById('taskId').value;
     const payload = {
-      brandId: document.getElementById('taskBrand').value,
+      brandId: chosenBrandId,
       title: document.getElementById('taskTitle').value.trim(),
       date: document.getElementById('taskDate').value,
       time: document.getElementById('taskTime').value,
@@ -895,12 +983,21 @@ document.addEventListener('DOMContentLoaded', () => {
     saveState();
   });
 
-  // Save Note
   document.getElementById('noteForm').addEventListener('submit', (e) => {
     e.preventDefault();
+    const inlineTyped = document.getElementById('inlineNoteBrandName').value.trim();
+    let chosenBrandId = document.getElementById('noteBrand').value;
+    if (inlineTyped) {
+      const created = addNewBrand(inlineTyped);
+      if (created) chosenBrandId = created.id;
+    }
+    if (!chosenBrandId) {
+      chosenBrandId = state.brands[0].id;
+    }
+
     const id = document.getElementById('noteId').value;
     const payload = {
-      brandId: document.getElementById('noteBrand').value,
+      brandId: chosenBrandId,
       title: document.getElementById('noteTitle').value.trim(),
       tag: document.getElementById('noteTag').value.trim() || 'Catatan',
       body: document.getElementById('noteBody').value.trim(),
@@ -920,27 +1017,18 @@ document.addEventListener('DOMContentLoaded', () => {
     saveState();
   });
 
-  // Add Brand
   document.getElementById('addBrandBtn').addEventListener('click', () => {
     const input = document.getElementById('newBrandInput');
     const colorInput = document.getElementById('newBrandColor');
-    const name = input.value.trim();
-    if (!name) return;
-    state.brands.push({
-      id: 'b-' + Date.now(),
-      name,
-      color: colorInput.value || '#38bdf8'
-    });
+    const created = addNewBrand(input.value, colorInput.value);
+    if (!created) return;
     input.value = '';
-    saveState();
-    showToast(`Brand "${name}" ditambahkan!`);
+    showToast(`Brand "${created.name}" ditambahkan!`);
   });
 
-  // Search & Sort
   document.getElementById('searchProjectInput').addEventListener('input', renderAllProjects);
   document.getElementById('projectSortSelect').addEventListener('change', renderAllProjects);
 
-  // Report Filters & Exports
   document.getElementById('reportBrandFilter').addEventListener('change', renderReport);
   document.getElementById('reportStartDate').addEventListener('change', renderReport);
   document.getElementById('reportEndDate').addEventListener('change', renderReport);
@@ -967,7 +1055,6 @@ document.addEventListener('DOMContentLoaded', () => {
     link.click();
   });
 
-  // Notifications & Custom Status
   document.getElementById('notifPermBtn').addEventListener('click', requestBrowserNotification);
   document.getElementById('globalNotifToggle').addEventListener('change', (e) => {
     state.globalNotif = e.target.checked;
@@ -985,7 +1072,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Export/Import JSON & Reset
   document.getElementById('exportDataBtn').addEventListener('click', () => {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);

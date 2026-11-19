@@ -38,9 +38,7 @@
 
     <!-- BRAND / PROJECT SWITCHER BAR -->
     <div class="brand-switcher-bar">
-      <div class="brand-pills-scroll" id="brandSwitcherList">
-        <!-- Rendered by JS: Semua Brand, Kasubanyaman, Kopi Hari Ini, dll -->
-      </div>
+      <div class="brand-pills-scroll" id="brandSwitcherList"></div>
       <button id="manageBrandsBtn" class="btn-brand-manage" title="Tambah atau Hapus Brand/Project">+ Brand</button>
     </div>
 
@@ -159,7 +157,7 @@
           </div>
         </div>
 
-        <!-- KERTAS LAPORAN BERLATAR POLOS (CLEAN PLAIN WHITE BACKGROUND) -->
+        <!-- KERTAS LAPORAN BERLATAR POLOS -->
         <div id="printableReportSheet" class="report-plain-sheet">
           <div class="report-sheet-header">
             <div>
@@ -173,7 +171,6 @@
             </div>
           </div>
 
-          <!-- Ringkasan Angka Polos -->
           <div class="report-kpi-row">
             <div class="rep-kpi-box">
               <span>Total Konten</span>
@@ -197,7 +194,6 @@
             </div>
           </div>
 
-          <!-- Grafik Canvas Polos -->
           <div class="report-charts-grid">
             <div class="rep-chart-card">
               <h3>Grafik Distribusi Status Konten</h3>
@@ -211,7 +207,6 @@
             </div>
           </div>
 
-          <!-- Tabel Rincian Lengkap -->
           <div class="rep-table-section">
             <h3>Tabel Rincian Jadwal & Status Konten</h3>
             <div class="table-responsive">
@@ -227,9 +222,7 @@
                     <th>Catatan</th>
                   </tr>
                 </thead>
-                <tbody id="reportTableBody">
-                  <!-- Rendered by JS -->
-                </tbody>
+                <tbody id="reportTableBody"></tbody>
               </table>
             </div>
           </div>
@@ -241,12 +234,11 @@
         <div class="section-header-row">
           <div>
             <h2 class="section-title">Pengaturan & Brand</h2>
-            <p class="section-desc">Kelola daftar 5 brand/project, status, notifikasi & backup offline</p>
+            <p class="section-desc">Kelola daftar brand/project, status, notifikasi & backup offline</p>
           </div>
         </div>
 
         <div class="settings-card">
-          <!-- Kelola Brand / Project -->
           <div class="setting-item column">
             <div class="setting-row-between">
               <div>
@@ -295,7 +287,7 @@
           <div class="setting-item">
             <div>
               <h3>Backup & Restore Offline (JSON)</h3>
-              <p>Simpan seluruh data 5 brand ke file lokal untuk cadangan</p>
+              <p>Simpan seluruh data brand ke file lokal untuk cadangan</p>
             </div>
             <div class="btn-group">
               <button id="exportDataBtn" class="btn-secondary-sm">Export JSON</button>
@@ -309,7 +301,7 @@
           <div class="setting-item danger-zone">
             <div>
               <h3>Reset Data ke Awal</h3>
-              <p>Kembalikan 5 brand default (Kasubanyaman, Kopi Hari Ini, icare Service, Kawarami, LKP Nindya Putri)</p>
+              <p>Kembalikan 5 brand default & perbaiki data yang kosong</p>
             </div>
             <button id="resetDemoBtn" class="btn-danger-sm">Reset Default</button>
           </div>
@@ -338,7 +330,6 @@
         <span>Jadwal</span>
       </button>
 
-      <!-- Floating Center Action Button -->
       <button class="nav-fab" id="fabAddTask" aria-label="Tambah Tugas atau Konten">
         <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -386,8 +377,15 @@
         <input type="hidden" id="taskId" />
         
         <div class="form-group">
-          <label for="taskBrand">Pilih Brand / Project *</label>
-          <select id="taskBrand" required></select>
+          <div class="label-action-row">
+            <label for="taskBrand">Pilih Brand / Project *</label>
+            <button type="button" id="toggleNewTaskBrandBtn" class="btn-inline-add">+ Ketik Brand Baru</button>
+          </div>
+          <select id="taskBrand"></select>
+          <div id="inlineNewTaskBrandBox" class="inline-brand-creator hidden">
+            <input type="text" id="inlineTaskBrandName" placeholder="Ketik nama brand / project baru..." maxlength="35" />
+            <button type="button" id="saveInlineTaskBrandBtn" class="btn-primary-sm">Pakai</button>
+          </div>
         </div>
 
         <div class="form-group">
@@ -458,8 +456,15 @@
       <form id="noteForm" class="modal-body">
         <input type="hidden" id="noteId" />
         <div class="form-group">
-          <label for="noteBrand">Untuk Brand / Project *</label>
-          <select id="noteBrand" required></select>
+          <div class="label-action-row">
+            <label for="noteBrand">Untuk Brand / Project *</label>
+            <button type="button" id="toggleNewNoteBrandBtn" class="btn-inline-add">+ Ketik Brand Baru</button>
+          </div>
+          <select id="noteBrand"></select>
+          <div id="inlineNewNoteBrandBox" class="inline-brand-creator hidden">
+            <input type="text" id="inlineNoteBrandName" placeholder="Ketik nama brand / project baru..." maxlength="35" />
+            <button type="button" id="saveInlineNoteBrandBtn" class="btn-primary-sm">Pakai</button>
+          </div>
         </div>
         <div class="form-group">
           <label for="noteTitle">Judul Catatan *</label>
