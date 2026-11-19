@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ContentFlow — To-Do & Content Project Manager</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="apple-touch-icon" href="logo.svg" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="stylesheet" href="style.css" />
+  <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Header -->
+    <header class="top-bar">
+      <div class="brand">
+        <img src="logo.svg" alt="ContentFlow Logo" class="brand-logo" />
+        <div>
+          <h1 class="brand-title">ContentFlow</h1>
+          <p class="brand-sub" id="headerDate">Memuat tanggal...</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="notifPermBtn" class="icon-btn" title="Aktifkan Izin Notifikasi Browser" aria-label="Notifikasi">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span class="notif-dot" id="notifStatusDot"></span>
+        </button>
+        <button id="quickAddTopBtn" class="btn-primary-sm">+ Tugas Baru</button>
+      </div>
+    </header>
+
+    <!-- Main View Container -->
+    <main class="main-content">
+      
+      <!-- TAB 1: BERANDA (TODAY & OVERVIEW) -->
+      <section id="view-beranda" class="view-section active">
+        <!-- Summary Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">Hari Ini</span>
+            <strong class="stat-value" id="statToday">0</strong>
+            <span class="stat-badge blue">Jadwal</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Proses / Editing</span>
+            <strong class="stat-value" id="statProgress">0</strong>
+            <span class="stat-badge amber">Aktif</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Selesai</span>
+            <strong class="stat-value" id="statDone">0</strong>
+            <span class="stat-badge emerald">Tuntas</span>
+          </div>
+        </div>
+
+        <!-- Date Navigator & Quick Filter -->
+        <div class="section-header-row">
+          <div>
+            <h2 class="section-title">Jadwal Konten & Tugas</h2>
+            <p class="section-desc">Kelola agenda harian berdasarkan tanggal</p>
+          </div>
+          <div class="date-picker-wrap">
+            <input type="date" id="filterDateInput" class="date-input" />
+            <button id="resetTodayBtn" class="btn-ghost-xs">Hari Ini</button>
+          </div>
+        </div>
+
+        <!-- Status Filter Pills -->
+        <div class="filter-pills" id="statusFilterPills">
+          <button class="pill active" data-status="ALL">Semua</button>
+          <button class="pill" data-status="Ide / Konsep">Ide / Konsep</button>
+          <button class="pill" data-status="Proses Syuting">Proses Syuting</button>
+          <button class="pill" data-status="Editing">Editing</button>
+          <button class="pill" data-status="Revisi">Revisi</button>
+          <button class="pill" data-status="Siap Upload">Siap Upload</button>
+          <button class="pill" data-status="Ditunda">Ditunda</button>
+          <button class="pill" data-status="Selesai">Selesai</button>
+        </div>
+
+        <!-- Task List Container -->
+        <div id="todayTaskList" class="task-list">
+          <!-- Rendered by JS -->
+        </div>
+      </section>
+
+      <!-- TAB 2: SEMUA PROJECT / KONTEN (KANBAN / LIST ALL) -->
+      <section id="view-project" class="view-section">
+        <div class="section-header-row">
+          <div>
+            <h2 class="section-title">Semua Manajemen Project</h2>
+            <p class="section-desc">Daftar lengkap seluruh jadwal konten & proyek</p>
+          </div>
+          <select id="projectSortSelect" class="select-sm">
+            <option value="date-asc">Tanggal Terdekat</option>
+            <option value="date-desc">Tanggal Terbaru</option>
+            <option value="status">Berdasarkan Status</option>
+          </select>
+        </div>
+
+        <div class="search-box">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="searchProjectInput" placeholder="Cari judul konten, platform, atau catatan..." />
+        </div>
+
+        <div id="allProjectList" class="task-list">
+          <!-- Rendered by JS -->
+        </div>
+      </section>
+
+      <!-- TAB 3: CATATAN PROJECT (NOTES) -->
+      <section id="view-catatan" class="view-section">
+        <div class="section-header-row">
+          <div>
+            <h2 class="section-title">Catatan Project & Ide</h2>
+            <p class="section-desc">Simpan skrip, brief konten, hook, atau riset</p>
+          </div>
+          <button id="addNoteBtn" class="btn-primary-sm">+ Catatan</button>
+        </div>
+
+        <div id="notesGrid" class="notes-grid">
+          <!-- Rendered by JS -->
+        </div>
+      </section>
+
+      <!-- TAB 4: PENGATURAN & BACKUP -->
+      <section id="view-pengaturan" class="view-section">
+        <div class="section-header-row">
+          <div>
+            <h2 class="section-title">Pengaturan & Data</h2>
+            <p class="section-desc">Kelola notifikasi, status kustom, dan backup data</p>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <div class="setting-item">
+            <div>
+              <h3>Notifikasi Pengingat Browser</h3>
+              <p>Terima pop-up notifikasi saat jadwal konten tiba</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="globalNotifToggle" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div>
+              <h3>Tambah Status Kustom</h3>
+              <p>Buat label status tambahan sesuai alur kerjamu</p>
+            </div>
+            <div class="custom-status-form">
+              <input type="text" id="newStatusInput" placeholder="Misal: Review Klien" maxlength="20" />
+              <button id="addCustomStatusBtn" class="btn-secondary-sm">Tambah</button>
+            </div>
+          </div>
+
+          <div class="setting-item column">
+            <div>
+              <h3>Daftar Status Aktif</h3>
+              <p>Status yang tersedia saat membuat atau mengedit tugas</p>
+            </div>
+            <div id="activeStatusTags" class="tag-cloud"></div>
+          </div>
+
+          <div class="setting-item">
+            <div>
+              <h3>Backup & Restore Data (JSON)</h3>
+              <p>Unduh atau pulihkan data agar aman saat pindah perangkat</p>
+            </div>
+            <div class="btn-group">
+              <button id="exportDataBtn" class="btn-secondary-sm">Export JSON</button>
+              <label class="btn-ghost-sm file-label">
+                Import JSON
+                <input type="file" id="importDataInput" accept=".json" hidden />
+              </label>
+            </div>
+          </div>
+
+          <div class="setting-item danger-zone">
+            <div>
+              <h3>Reset Data Aplikasi</h3>
+              <p>Hapus semua tugas dan catatan (kembali ke data awal)</p>
+            </div>
+            <button id="resetDemoBtn" class="btn-danger-sm">Reset Default</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- BOTTOM DASHBOARD NAVIGATION -->
+    <nav class="bottom-nav" aria-label="Navigasi Utama">
+      <button class="nav-item active" data-target="view-beranda">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        <span>Beranda</span>
+      </button>
+
+      <button class="nav-item" data-target="view-project">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        <span>Project</span>
+      </button>
+
+      <!-- Floating Center Action Button -->
+      <button class="nav-fab" id="fabAddTask" aria-label="Tambah Tugas atau Konten">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
+
+      <button class="nav-item" data-target="view-catatan">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+        </svg>
+        <span>Catatan</span>
+      </button>
+
+      <button class="nav-item" data-target="view-pengaturan">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        <span>Setelan</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- MODAL: TAMBAH / EDIT TUGAS KONTEN -->
+  <div id="taskModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="taskModalTitle">Tambah Jadwal Konten / Tugas</h3>
+        <button class="close-modal" data-close="taskModal">&times;</button>
+      </div>
+      <form id="taskForm" class="modal-body">
+        <input type="hidden" id="taskId" />
+        
+        <div class="form-group">
+          <label for="taskTitle">Judul Konten / To-Do *</label>
+          <input type="text" id="taskTitle" placeholder="Contoh: Bikin Reels Review Produk Kopi" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="taskDate">Tanggal Jadwal *</label>
+            <input type="date" id="taskDate" required />
+          </div>
+          <div class="form-group">
+            <label for="taskTime">Jam Pengingat</label>
+            <input type="time" id="taskTime" value="09:00" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="taskStatus">Status Pengerjaan</label>
+            <select id="taskStatus">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="taskPlatform">Kategori / Platform</label>
+            <select id="taskPlatform">
+              <option value="Instagram / Reels">Instagram / Reels</option>
+              <option value="TikTok">TikTok</option>
+              <option value="YouTube">YouTube</option>
+              <option value="Project Umum">Project Umum</option>
+              <option value="Desain / Artikel">Desain / Artikel</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Pengaturan Notifikasi Per Item -->
+        <div class="notif-toggle-box">
+          <div>
+            <strong>Notifikasi Pengingat</strong>
+            <small>Aktifkan alarm pengingat untuk konten ini</small>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="taskNotif" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label for="taskNote">Catatan / Brief Konten</label>
+          <textarea id="taskNote" rows="3" placeholder="Tulis konsep, hook video, alat yang dibutuhkan, atau link referensi..."></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-ghost" data-close="taskModal">Batal</button>
+          <button type="submit" class="btn-primary">Simpan Jadwal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: TAMBAH / EDIT CATATAN PROJECT -->
+  <div id="noteModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="noteModalTitle">Catatan Project Baru</h3>
+        <button class="close-modal" data-close="noteModal">&times;</button>
+      </div>
+      <form id="noteForm" class="modal-body">
+        <input type="hidden" id="noteId" />
+        <div class="form-group">
+          <label for="noteTitle">Judul Catatan *</label>
+          <input type="text" id="noteTitle" placeholder="Contoh: Ide Konten Mingguan & Skrip" required />
+        </div>
+        <div class="form-group">
+          <label for="noteTag">Label Project</label>
+          <input type="text" id="noteTag" placeholder="Contoh: Campaign Ramadhan / Riset" />
+        </div>
+        <div class="form-group">
+          <label for="noteBody">Isi Catatan *</label>
+          <textarea id="noteBody" rows="6" placeholder="Tulis detail catatan, checklist ide, atau skrip di sini..." required></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-ghost" data-close="noteModal">Batal</button>
+          <button type="submit" class="btn-primary">Simpan Catatan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
